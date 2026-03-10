@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  OPERATOR
+}
+
+enum ChatStatus {
+  PENDING
+  OPEN
+  CLOSED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+  SYSTEM
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  VIDEO
+  DOCUMENT
+  CONTACT
+  LOCATION
+  BUTTON
+  LIST
+  TEMPLATE
+}
+
+enum DeliveryStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum MessageSource {
+  API
+  APP_COEXISTENCE
+  FLOWBUILDER
+  OPERATOR
+}
+
+model Tenant {
+  id               String         @id @default(uuid())
+  name             String
+  waba_id          String?        // Meta WhatsApp Business Account ID
+  phone_number_id  String?        // Meta Phone Number ID
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  users            User[]
+  contacts         Contact[]
+  conversations    Conversation[]
+  flows            Flow[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  email     String   @unique
+  password  String   // Hashed password
+  role      Role     @default(OPERATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tickets   Conversation[] // Conversas atribuídas
+}
+
+model Contact {
+  id          String   @id @default(uuid())
+  tenantId    String
+  phoneNumber String   // WhatsApp Number
+  name        String?
+  attributes  Json?    // Dados extras (tags, email, etc)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  conversations Conversation[]
+}
+
+model Conversation {
+  id            String     @id @default(uuid())
+  tenantId      String
+  contactId     String
+  assigneeId    String?    // Nullable (se bot)
+  status        ChatStatus @default(PENDING)
+  lastMessageAt DateTime   @default(now())
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  tenant        Tenant     @relation(fields: [tenantId], references: [id])
+  contact       Contact    @relation(fields: [contactId], references: [id])
+  assignee      User?      @relation(fields: [assigneeId], references: [id])
+  messages      Message[]
+}
+
+model Message {
+  id             String           @id @default(uuid())
+  conversationId String
+  wamId          String           @unique // WhatsApp Message ID
+  direction      MessageDirection
+  type           MessageType
+  content        Json             // Payload flexível dependendo do tipo da msg
+  status         DeliveryStatus   @default(SENT)
+  source         MessageSource    @default(API)
+  createdAt      DateTime         @default(now())
+  
+  conversation   Conversation     @relation(fields: [conversationId], references: [id])
+}
+
+model Flow {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  isActive    Boolean  @default(false)
+  nodes       Json     // React Flow Nodes
+  edges       Json     // React Flow Edges
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}
