@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: apioficial-whatsapp
+    env: node
+    rootDir: backend
+    region: ohio
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://postgres:2egP0i8BPAokyQ2N@db.nfurqlrttljzleqvxoxa.supabase.co:5432/postgres?schema=public
+      - key: REDIS_HOST
+        value: climbing-wren-67459.upstash.io
+      - key: REDIS_PORT
+        value: 6379
+      - key: REDIS_PASSWORD
+        value: gQAAAAAAAAQeDAAIncDl5ZTdkYmZiNTMwYTk0NWY2YjQ4MTA3YzJiYTliMjkMXAyNjc0NTk
+      - key: JWT_SECRET
+        value: sua_chave_secreta_super_segura
+      - key: JWT_EXPIRATION
+        value: 7d
+      - key: META_WEBHOOK_VERIFY_TOKEN
+        value: meu_token_secreto_da_meta_2024
+      - key: META_API_VERSION
+        value: v19.0
+      - key: PORT
+        value: 3000
